@@ -34,8 +34,7 @@ public:
       return true;
     }
 
-    if (isa<CXXConstructorDecl>(FD) || isa<CXXDestructorDecl>(FD) ||
-        isa<CXXConversionDecl>(FD)) {
+    if (isa<CXXConstructorDecl>(FD) || isa<CXXDestructorDecl>(FD)) {
       return true;
     }
 
@@ -85,6 +84,8 @@ public:
       return true;
     }
 
+    if (isa<CXXConversionDecl>(FD)) return true;
+    
     if (SkipFunctionDecl(FD)) return true;
 
     Diags.Report(FD->getLocation(), WarnNodiscard);
@@ -102,29 +103,28 @@ public:
   
     if (SkipFunctionDecl(FD)) return true;
 
-    DynTypedNodeList Parents = Context.getParents(*CE);
-    if (Parents.empty()) {
-      return true;
-    }
+    DynTypedNode CurrNode = DynTypedNode::create(*CE);
+    while (true) {
+      DynTypedNodeList Parents = Context.getParents(CurrNode);
+      if (Parents.empty()) break;
 
-    const DynTypedNode &Parent = Parents[0];
-
-    if (Parent.get<CompoundStmt>()) {
-      Diags.Report(CE->getExprLoc(), WarnIgnoredResult);
-      return true;
-    }
-
-    if (const auto *EWC = Parent.get<ExprWithCleanups>()) {
-      DynTypedNodeList GrandParents = Context.getParents(*EWC);
-      if (!GrandParents.empty() && GrandParents[0].get<CompoundStmt>()) {
+      const DynTypedNode &Parent = Parents[0];
+    
+      if (Parent.get<CompoundStmt>()) {
         Diags.Report(CE->getExprLoc(), WarnIgnoredResult);
         return true;
+      }
+
+      if (Parent.get<Expr>()) {
+        CurrNode = Parent;
+      } else {
+        break;
       }
     }
 
     return true;
   }
-}
+};
 
 class NodiscardConsumer : public ASTConsumer {
   CompilerInstance &Instance;
