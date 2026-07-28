@@ -22,11 +22,11 @@ public:
   : Context(Context), Diags(Diags) {
     WarnNodiscard = Diags.getCustomDiagID(
       DiagnosticsEngine::Warning,
-      "function returning non-void should be marked with [[nodiscard]]");
+      "function %0 returning non-void should be marked with [[nodiscard]]");
 
     WarnIgnoredResult = Diags.getCustomDiagID(
       DiagnosticsEngine::Warning,
-      "result of call to non-void function is ignored");
+      "result of call to non-void function %0 is ignored");
   }
 
   bool SkipFunctionDecl(FunctionDecl *FD) {
@@ -88,7 +88,7 @@ public:
     
     if (SkipFunctionDecl(FD)) return true;
 
-    Diags.Report(FD->getLocation(), WarnNodiscard);
+    Diags.Report(FD->getLocation(), WarnNodiscard) << FD;
     return true;
   }
 
@@ -111,7 +111,7 @@ public:
       const DynTypedNode &Parent = Parents[0];
     
       if (Parent.get<CompoundStmt>()) {
-        Diags.Report(CE->getExprLoc(), WarnIgnoredResult);
+        Diags.Report(CE->getExprLoc(), WarnIgnoredResult) << FD;
         return true;
       }
 
