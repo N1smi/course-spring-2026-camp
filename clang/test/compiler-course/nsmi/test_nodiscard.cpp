@@ -118,6 +118,9 @@ void test_used_calls() {
   int val = basic_warn();
 
   // CHECK-NOT: warning: result of call to non-void function is ignored
+  (void)basic_warn();
+
+  // CHECK-NOT: warning: result of call to non-void function is ignored
   if (basic_warn() == 55) {}
 
   // CHECK-NOT: warning: result of call to non-void function is ignored

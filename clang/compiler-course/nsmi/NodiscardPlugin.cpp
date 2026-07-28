@@ -115,7 +115,11 @@ public:
         return true;
       }
 
-      if (Parent.get<Expr>()) {
+      if (const Expr *E = Parent.get<Expr>()) {
+        if (E->getType()->isVoidType()) {
+          return true;
+        }
+
         CurrNode = Parent;
       } else {
         break;
